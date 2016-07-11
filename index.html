@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>性能监控测试</title>
+	<script type="text/javascript">
+		document.addEventListener('DOMContentLoaded',function (event) {
+	        	window.logInfo.readyTime = +new Date() - window.logInfo.openTime;
+	        	//console.log('用户可操作时间：', window.logInfo.readyTime+ 'ms');
+	    	}
+		);
+		window.onload = function () {
+		    window.logInfo.allloadTime = +new Date() - window.logInfo.openTime;
+		    //console.log('总下载时间：', window.logInfo.allloadTime + 'ms');
+		    var timname = {
+	            whiteScreenTime: '白屏时间',
+	            firstScreen: '首屏时间',
+	            readyTime: '用户可操作时间',
+	            allloadTime: '总下载时间'
+	        };
+	        for (var i in timname) {
+	            console.log(timname[i] + ':' + window.logInfo[i] + 'ms');
+	        }
+
+	        var logStr = '';
+			for (var i in timname) {
+			    logStr += '&' + i + '=' + window.logInfo[i];
+			}
+			//将记录的时间发送到nginx监控的地址，在nginx日志中就可以查看了
+			//(new Image()).src = 'http://172.16.5.56/?action=speedlog' + logStr;
+		};
+	    window.logInfo = {};
+	    window.logInfo.openTime = performance.timing.navigationStart;
+	    window.logInfo.whiteScreenTime = +new Date() - window.logInfo.openTime;
+	    //console.log('白屏时间：', window.logInfo.whiteScreenTime + 'ms');
+    </script>
+	<style>
+		.main{
+			margin:0 auto;
+			width:100%;
+		}
+		.main .ele{
+			display: inline-block;
+			float:left;    
+			margin: 5px;
+    		border: 5px solid #DDD;
+		}
+		img{
+			width:540px;
+		}
+	</style>
+</head>
+<body>
+	<div class="main">
+		<div class="ele"><img src="http://dd.sdsz.com.cn/bxn-static-resource/login/images/divbg/1.jpg" alt=""></div>
+		<div class="ele"><img src="http://dd.sdsz.com.cn/bxn-static-resource/login/images/divbg/2.jpg" alt=""></div>
+		<div class="ele"><img src="http://dd.sdsz.com.cn/bxn-static-resource/login/images/divbg/3.jpg" alt=""></div>
+		<div class="ele"><img src="http://dd.sdsz.com.cn/bxn-static-resource/login/images/divbg/4.jpg" alt=""></div>
+	</div>
+	<div style="clear:both"></div>
+	<div>首屏结尾</div>
+	<script type="text/javascript">
+            (function logFirstScreen() {
+                var images = document.getElementsByTagName('img');
+                var iLen = images.length;
+                var curMax = 0;
+                var inScreenLen = 0;
+                // 图片的加载回调
+                function imageBack() {
+                    this.removeEventListener
+                    && this.removeEventListener('load', imageBack, !1);
+                    if (++curMax === inScreenLen) {
+                        // 如果所有在首屏的图片均已加载完成了的话，发送日志
+                        log();
+                    }   
+                }   
+                // 对于所有的位于指定区域的图片，绑定回调事件
+                for (var s = 0; s < iLen; s++) {
+                    var img = images[s];
+                    var offset = {
+                        top: 0
+                    };
+                    var curImg = img;
+                    while (curImg.offsetParent) {
+                        offset.top += curImg.offsetTop;
+                        curImg = curImg.offsetParent;
+                    }
+                    // 判断图片在不在首屏
+                    if (document.documentElement.clientHeight < offset.top) {
+                        continue;
+                    }
+                    // 图片还没有加载完成的话
+                    if (!img.complete) {
+                        inScreenLen++;
+                        img.addEventListener('load', imageBack, !1);
+                    }
+                }
+                // 如果首屏没有图片的话，直接发送日志
+                if (inScreenLen === 0) {
+                    log();
+                }
+                // 发送日志进行统计
+                function log () {
+                    window.logInfo.firstScreen = +new Date() - window.logInfo.openTime;
+                    //console.log('首屏时间：', window.logInfo.firstScreen + 'ms');
+                }
+            })();
+        </script>
+</body>
+
+
+</html>
